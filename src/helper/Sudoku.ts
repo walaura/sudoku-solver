@@ -13,9 +13,6 @@ export type TileGroup = Tile[];
 export type Quad = TileGroup[];
 export type Sudoku = TileGroup[];
 
-const smoosh = (input: any[][]): any[] =>
-	input.reduce((a, b) => [...a, ...b], []);
-
 const parse = (sudoku: PreSudoku): Sudoku => {
 	return sudoku.map(row =>
 		row.split('').map(number => {
@@ -45,4 +42,4 @@ const isSudokuSolved = (sudoku: Sudoku) =>
 		.map(isSolved)
 		.every(Boolean);
 
-export { isSolved, isSudokuSolved, getSolution, smoosh, parse };
+export { isSolved, isSudokuSolved, getSolution, parse };

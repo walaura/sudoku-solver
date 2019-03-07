@@ -2,10 +2,8 @@ import {
 	BlockedInQuad,
 	Quad,
 	TileGroup,
-	PreSudoku,
 	Sudoku,
 	isSolved,
-	smoosh,
 	parse,
 	getSolution,
 	isSudokuSolved,
@@ -65,9 +63,9 @@ const findBlockedInQuad = (
 ): BlockedInQuad => {
 	const getBlockedInGroup = (tiles, index) => {
 		const group = tiles[getIndexWithinQuad(index)];
-		const otherGroups = smoosh(
-			tiles.filter((_, i) => i !== getIndexWithinQuad(index))
-		);
+		const otherGroups = tiles
+			.filter((_, i) => i !== getIndexWithinQuad(index))
+			.flat();
 
 		let rt = [];
 
@@ -90,7 +88,7 @@ const findBlockedInQuad = (
 			getColumn(quad, { rowIndex: -1, colIndex: subColIndex })
 		),
 	].map(group =>
-		group.map(tiles => smoosh(tiles.map(({ possibles }) => [...possibles])))
+		group.map(tiles => tiles.map(({ possibles }) => [...possibles]).flat())
 	);
 
 	const rt = {

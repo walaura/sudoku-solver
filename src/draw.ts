@@ -1,6 +1,8 @@
 import chalk from 'chalk';
 import { Sudoku, isSolved, getSolution } from './helper/Sudoku';
 
+const write = w => process.stdout.write(w);
+
 const newLine = i => {
 	write('  ');
 	write(color(i)(new Array(3 * 3).fill('–--').join(' + ')));
@@ -19,8 +21,6 @@ const blockedColor = (tile, possible) => {
 	}
 	return c => c;
 };
-
-const { write } = process.stdout;
 
 const draw = (sudoku: Sudoku) => {
 	const allPossibles = [[1, 2, 3], [4, 5, 6], [7, 8, 9]];
