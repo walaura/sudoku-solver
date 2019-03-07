@@ -27,9 +27,11 @@ const parse = (sudoku: PreSudoku): Sudoku => {
 
 const isSolved = (tile: Tile) => tile.possibles.length === 1;
 
-const findBlocked = (tileGroup: TileGroup): number[] => {
-	return tileGroup.filter(isSolved).map(({ possibles }) => possibles[0]);
-};
+const isUnique = (number, tileGroup: TileGroup): boolean =>
+	tileGroup.filter(({ possibles }) => possibles.includes(number)).length === 0;
+
+const findBlocked = (tileGroup: TileGroup): number[] =>
+	tileGroup.filter(isSolved).map(({ possibles }) => possibles[0]);
 
 const getQuad = (
 	sudoku: Sudoku,
@@ -71,16 +73,26 @@ const getColumn = (
 
 const iterate = (sudoku: Sudoku) => {
 	return sudoku.map((row, rowIndex) =>
-		row.map((col, colIndex) => {
+		row.map((tile, colIndex) => {
+			if (isSolved(sudoku[rowIndex][colIndex])) {
+				return tile;
+			}
 			const inRow = getRow(sudoku, { rowIndex, colIndex });
 			const inCol = getColumn(sudoku, { rowIndex, colIndex });
 			const inQuad = getQuad(sudoku, { rowIndex, colIndex });
-			console.log(rowIndex, colIndex, inCol);
 			const blocked = findBlocked([...inRow, ...inCol, ...inQuad]);
-			col.possibles = col.possibles.filter(
+			tile.possibles = tile.possibles.filter(
 				possible => !blocked.includes(possible)
 			);
-			return col;
+			for (let set of [inRow, inCol, inQuad]) {
+				for (let possible of tile.possibles) {
+					if (isUnique(possible, set)) {
+						tile.possibles = [possible];
+						break;
+					}
+				}
+			}
+			return tile;
 		})
 	);
 };
@@ -106,12 +118,16 @@ const render = (sudoku: Sudoku) => {
 
 	newLine(-1);
 	sudoku.forEach((row, rowIndex) => {
-		allPossibles.forEach(possibleRow => {
+		allPossibles.forEach((possibleRow, possibleRowIndex) => {
 			process.stdout.write(color(-1)('| '));
 			row.forEach((tile, colIndex) => {
-				possibleRow.forEach(possible => {
+				possibleRow.forEach((possible, possibleIndex) => {
 					if (isSolved(tile)) {
-						process.stdout.write(chalk.red(tile.possibles[0].toString()));
+						if (possibleIndex === 1 && possibleRowIndex === 1) {
+							process.stdout.write(chalk.blue(tile.possibles[0].toString()));
+						} else {
+							process.stdout.write(' ');
+						}
 					} else {
 						if (tile.possibles.includes(possible)) {
 							process.stdout.write(possible.toString());
