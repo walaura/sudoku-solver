@@ -1,16 +1,5 @@
 import chalk from 'chalk';
-import {
-	BlockedInQuad,
-	Quad,
-	TileGroup,
-	PreSudoku,
-	Sudoku,
-	Tile,
-	isSolved,
-	smoosh,
-	parse,
-	getSolution,
-} from './helper/Sudoku';
+import { Sudoku, isSolved, getSolution } from './helper/Sudoku';
 
 const newLine = i => {
 	write('  ');

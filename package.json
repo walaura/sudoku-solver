@@ -1,28 +1,36 @@
 {
-  "name": "sudoku-solver",
-  "version": "1.0.0",
-  "description": "",
-  "main": "index.js",
-  "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
-  },
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/walaura/sudoku-solver.git"
-  },
-  "author": "lau mayhem",
-  "license": "ISC",
-  "bugs": {
-    "url": "https://github.com/walaura/sudoku-solver/issues"
-  },
-  "homepage": "https://github.com/walaura/sudoku-solver#readme",
-  "devDependencies": {
-    "@babel/core": "^7.3.4",
-    "@babel/preset-env": "^7.3.4",
-    "@babel/register": "^7.0.0",
-    "@types/node": "^11.10.5"
-  },
-  "dependencies": {
-    "chalk": "^2.4.2"
-  }
+	"name": "sudoku-solver",
+	"version": "1.0.0",
+	"description": "",
+	"main": "index.js",
+	"scripts": {
+		"test": "echo \"Error: no test specified\" && exit 1",
+		"watch": "parcel web/index.html"
+	},
+	"repository": {
+		"type": "git",
+		"url": "git+https://github.com/walaura/sudoku-solver.git"
+	},
+	"author": "lau mayhem",
+	"license": "ISC",
+	"bugs": {
+		"url": "https://github.com/walaura/sudoku-solver/issues"
+	},
+	"homepage": "https://github.com/walaura/sudoku-solver#readme",
+	"devDependencies": {
+		"@babel/core": "^7.3.4",
+		"@babel/preset-env": "^7.3.4",
+		"@babel/register": "^7.0.0",
+		"@types/node": "^11.10.5",
+		"ts-loader": "^5.3.3",
+		"typescript": "^3.3.3333",
+		"webpack": "^4.29.6",
+		"webpack-cli": "^3.2.3"
+	},
+	"dependencies": {
+		"chalk": "^2.4.2",
+		"helper": "0.0.13",
+		"lit-html": "^1.0.0",
+		"parcel": "^1.12.0"
+	}
 }

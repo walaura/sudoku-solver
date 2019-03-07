@@ -1,0 +1,84 @@
+@import url('https://fonts.googleapis.com/css?family=Roboto+Mono:400,700');
+
+:root {
+	font-family: 'Roboto Mono', monospace;
+	--size: 20em;
+}
+
+x-board-holder {
+	position: fixed;
+	top: 0;
+	left: 0;
+	right: 0;
+	bottom: 10vh;
+	display: flex;
+	justify-content: center;
+	align-items: center;
+}
+
+x-board {
+	box-shadow: inset 0 0 0 2px #000;
+	padding: 2px;
+	width: var(--size);
+	height: var(--size);
+	display: grid;
+	justify-content: center;
+	align-items: center;
+	grid-template-columns: repeat(9, 1fr);
+	grid-auto-rows: 1fr;
+	overflow: hidden;
+}
+
+x-tile {
+	border: 1px solid #000;
+	box-sizing: border-box;
+	display: grid;
+	justify-content: center;
+	align-items: center;
+	width: 100%;
+	height: 100%;
+	overflow: hidden;
+	justify-content: center;
+	align-items: center;
+}
+
+x-tile[data-is-big='false'] {
+	grid-template-columns: repeat(3, 1fr);
+	grid-template-rows: repeat(3, 1fr);
+}
+
+x-small {
+	font-size: 0.2em;
+	text-align: center;
+	color: #6b5b95;
+}
+
+x-controls {
+	font-family: 'Roboto Mono', monospace;
+	position: fixed;
+	top: 80vh;
+	bottom: 0;
+	left: 0;
+	right: 0;
+	padding: 1em;
+	display: grid;
+	gap: 0.5em;
+	grid-auto-flow: column;
+	align-content: center;
+	max-width: calc(var(--size) * 2);
+	margin: auto;
+}
+
+x-controls button {
+	background: #000;
+	color: #fff;
+	padding: 1em;
+	border: 0;
+	font-family: 'Roboto Mono', monospace;
+	cursor: pointer;
+	border-radius: 999em;
+}
+
+x-controls button[data-solve] {
+	background: #6b5b95;
+}

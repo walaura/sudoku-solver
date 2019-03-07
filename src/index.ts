@@ -118,7 +118,7 @@ const getColumn = (
 	return rt;
 };
 
-const iterate = (sudoku: Sudoku) => {
+const iterate = (sudoku: Sudoku): Sudoku => {
 	return sudoku.map((row, rowIndex) =>
 		row.map((tile, colIndex) => {
 			/* 
@@ -192,13 +192,13 @@ const iterate = (sudoku: Sudoku) => {
 };
 
 const solve = (
-	sudoku: PreSudoku,
+	sudoku: Sudoku,
 	{
 		iterateUntil = 99,
 		afterIteration = () => {},
 	}: { iterateUntil?: number; afterIteration?: (Sudoku) => void }
 ): Sudoku => {
-	let parsed = parse(sudoku);
+	let parsed = sudoku;
 	for (let i = 0; i < iterateUntil; i++) {
 		parsed = iterate(parsed);
 		afterIteration(parsed);
@@ -209,5 +209,5 @@ const solve = (
 	return parsed;
 };
 
-export { iterate };
+export { iterate, parse };
 export default solve;
