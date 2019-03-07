@@ -38,7 +38,8 @@ const isSolved = (tile: Tile): boolean => tile.possibles.size === 1;
 const getSolution = (tile: Tile): number => [...tile.possibles][0];
 
 const isSudokuSolved = (sudoku: Sudoku) =>
-	smoosh(sudoku)
+	sudoku
+		.flat()
 		.map(isSolved)
 		.every(Boolean);
 
