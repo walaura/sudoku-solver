@@ -60,5 +60,3 @@ const sudoku = [
 	'700000000',
 ];
 myWorker.postMessage({ type: 'load', sudoku });
-
-myWorker.postMessage({ type: 'step' });
