@@ -1,55 +1,102 @@
-import chalk from 'chalk';
-
-type PreSudoku = string[];
-type Tile = {
-	possibles: number[];
-};
-
-type TileGroup = Tile[];
-type Sudoku = TileGroup[];
-
-const parse = (sudoku: PreSudoku): Sudoku => {
-	return sudoku.map(row =>
-		row.split('').map(number => {
-			const numberAsNumber = parseInt(number);
-			if (numberAsNumber !== 0) {
-				return {
-					possibles: [numberAsNumber],
-				};
-			} else {
-				return {
-					possibles: [1, 2, 3, 4, 5, 6, 7, 8, 9],
-				};
-			}
-		})
-	);
-};
-
-const isSolved = (tile: Tile) => tile.possibles.length === 1;
+import {
+	BlockedInQuad,
+	Quad,
+	TileGroup,
+	PreSudoku,
+	Sudoku,
+	isSolved,
+	smoosh,
+	parse,
+	getSolution,
+	isSudokuSolved,
+} from './helper/Sudoku';
 
 const isUnique = (number, tileGroup: TileGroup): boolean =>
-	tileGroup.filter(({ possibles }) => possibles.includes(number)).length === 0;
+	tileGroup.filter(({ possibles }) => possibles.has(number)).length === 0;
 
-const findBlocked = (tileGroup: TileGroup): number[] =>
-	tileGroup.filter(isSolved).map(({ possibles }) => possibles[0]);
+const suspectify = (possibles: number[]) => possibles.sort().join('');
+const unsuspectify = (suspect: string): number[] =>
+	suspect.split('').map(s => parseInt(s));
+
+const findGridLocks = (tileGroup: TileGroup): number[][] => {
+	let rt = [];
+	const suspects = tileGroup
+		.map(tile => suspectify([...tile.possibles]))
+		.filter(s => s.length > 1);
+	for (const suspect of suspects) {
+		const len = suspects.filter(s => s === suspect).length;
+		if (len === suspect.length) {
+			rt.push(...unsuspectify(suspect));
+		}
+	}
+	return rt;
+};
+
+const findNonPossibles = (tileGroup: TileGroup): number[] =>
+	tileGroup.filter(isSolved).map(getSolution);
+
+const getIndexWithinQuad = (i: number): number => i % 3;
 
 const getQuad = (
 	sudoku: Sudoku,
 	{ rowIndex, colIndex }: { rowIndex: number; colIndex: number }
-): TileGroup => {
+): Quad => {
 	const getIds = quad => [3 * quad - 3, 3 * quad - 2, 3 * quad - 1];
 	const [rowQuad, colQuad] = [
 		Math.ceil((rowIndex + 1) / 3),
 		Math.ceil((colIndex + 1) / 3),
 	].map(getIds);
 
-	let rt = [];
+	let rt = [[], [], []];
 	for (let rowQuadIndex of rowQuad) {
 		for (let colQuadIndex of colQuad) {
-			if (rowQuadIndex !== rowIndex || colQuadIndex !== colIndex)
-				rt = [...rt, sudoku[rowQuadIndex][colQuadIndex]];
+			rt[rowQuadIndex % 3] = [
+				...rt[rowQuadIndex % 3],
+				sudoku[rowQuadIndex][colQuadIndex],
+			];
 		}
 	}
+	return rt;
+};
+
+const findBlockedInQuad = (
+	quad: Quad,
+	{ rowIndex, colIndex }: { rowIndex: number; colIndex: number }
+): BlockedInQuad => {
+	const getBlockedInGroup = (tiles, index) => {
+		const group = tiles[getIndexWithinQuad(index)];
+		const otherGroups = smoosh(
+			tiles.filter((_, i) => i !== getIndexWithinQuad(index))
+		);
+
+		let rt = [];
+
+		for (const number of group) {
+			if (
+				!otherGroups.includes(number) &&
+				group.filter(n => n === number).length > 1
+			) {
+				rt.push(number);
+			}
+		}
+		return new Set(rt);
+	};
+
+	const [rows, columns] = [
+		[0, 1, 2].map(subRowIndex =>
+			getRow(quad, { rowIndex: subRowIndex, colIndex: -1 })
+		),
+		[0, 1, 2].map(subColIndex =>
+			getColumn(quad, { rowIndex: -1, colIndex: subColIndex })
+		),
+	].map(group =>
+		group.map(tiles => smoosh(tiles.map(({ possibles }) => [...possibles])))
+	);
+
+	const rt = {
+		blockedRows: getBlockedInGroup(rows, rowIndex),
+		blockedCols: getBlockedInGroup(columns, colIndex),
+	};
 	return rt;
 };
 
@@ -65,7 +112,7 @@ const getColumn = (
 	{ rowIndex, colIndex }: { rowIndex: number; colIndex: number }
 ): TileGroup => {
 	let rt = [];
-	for (let i = 0; i < 9; i++) {
+	for (let i = 0; i < sudoku.length; i++) {
 		if (i !== rowIndex) rt = [...rt, sudoku[i][colIndex]];
 	}
 	return rt;
@@ -74,74 +121,93 @@ const getColumn = (
 const iterate = (sudoku: Sudoku) => {
 	return sudoku.map((row, rowIndex) =>
 		row.map((tile, colIndex) => {
+			/* 
+			if it's solved our work here it's done
+			*/
 			if (isSolved(sudoku[rowIndex][colIndex])) {
 				return tile;
 			}
+
 			const inRow = getRow(sudoku, { rowIndex, colIndex });
 			const inCol = getColumn(sudoku, { rowIndex, colIndex });
-			const inQuad = getQuad(sudoku, { rowIndex, colIndex });
-			const blocked = findBlocked([...inRow, ...inCol, ...inQuad]);
-			tile.possibles = tile.possibles.filter(
-				possible => !blocked.includes(possible)
-			);
-			for (let set of [inRow, inCol, inQuad]) {
-				for (let possible of tile.possibles) {
+			const quad = getQuad(sudoku, { rowIndex, colIndex });
+
+			const inQuad = quad
+				.reduce((a, b) => [...a, ...b], [])
+				.filter(t => t !== tile);
+
+			const blocked = [];
+			/* 
+			Find all possible numbers & filter out which ones
+			are "placed" already (this loop is how i do sudokus irl)
+			*/
+			blocked.push(...findNonPossibles([...inRow, ...inCol, ...inQuad]));
+
+			/* 
+			tiles can be 'grid locked' when within a set, there's 
+			a pair with the same possibilities
+			*/
+			for (const set of [inRow, inCol, inQuad]) {
+				blocked.push(...findGridLocks(set));
+			}
+
+			for (const b of blocked) {
+				tile.possibles.delete(b);
+			}
+
+			/*
+			within quads a tile in a row/col can be blocked for
+			the whole board if its only possible in a row/col in that quad. 
+			We preempt this work and pick it up on the next pass
+			*/
+			tile = { ...tile, ...findBlockedInQuad(quad, { rowIndex, colIndex }) };
+
+			/* 
+			if there's only 1 tile in a group that can hold a solution 
+			it has to be that one 
+			*/
+			for (const set of [inRow, inCol, inQuad]) {
+				for (const possible of tile.possibles) {
 					if (isUnique(possible, set)) {
-						tile.possibles = [possible];
+						tile.possibles = new Set([possible]);
 						break;
 					}
 				}
 			}
+
+			/*
+			in the same vein, if a tile is horizontally or vertically
+			locked we can do away with the rest of numbers and gridlock it
+			*/
+			if ([...tile.blockedRows].filter(r => tile.possibles.has(r)).length > 1) {
+				tile.possibles = new Set([...tile.blockedRows, ...tile.blockedCols]);
+			}
+			if ([...tile.blockedCols].filter(r => tile.possibles.has(r)).length > 1) {
+				tile.possibles = new Set([...tile.blockedRows, ...tile.blockedCols]);
+			}
+
 			return tile;
 		})
 	);
 };
 
-const solve = (sudoku: PreSudoku, iterateFor: number = 10): any => {
+const solve = (
+	sudoku: PreSudoku,
+	{
+		iterateUntil = 99,
+		afterIteration = () => {},
+	}: { iterateUntil?: number; afterIteration?: (Sudoku) => void }
+): Sudoku => {
 	let parsed = parse(sudoku);
-	for (let i = 0; i < iterateFor; i++) {
+	for (let i = 0; i < iterateUntil; i++) {
 		parsed = iterate(parsed);
-		render(parsed);
+		afterIteration(parsed);
+		if (isSudokuSolved(parsed)) {
+			break;
+		}
 	}
 	return parsed;
 };
 
-const render = (sudoku: Sudoku) => {
-	const allPossibles = [[1, 2, 3], [4, 5, 6], [7, 8, 9]];
-	const color = i => ((i + 1) % 3 === 0 ? chalk.green : chalk.gray);
-
-	const newLine = i => {
-		process.stdout.write('  ');
-		process.stdout.write(color(i)(new Array(3 * 3).fill('–--').join(' + ')));
-		process.stdout.write('\n');
-	};
-
-	newLine(-1);
-	sudoku.forEach((row, rowIndex) => {
-		allPossibles.forEach((possibleRow, possibleRowIndex) => {
-			process.stdout.write(color(-1)('| '));
-			row.forEach((tile, colIndex) => {
-				possibleRow.forEach((possible, possibleIndex) => {
-					if (isSolved(tile)) {
-						if (possibleIndex === 1 && possibleRowIndex === 1) {
-							process.stdout.write(chalk.blue(tile.possibles[0].toString()));
-						} else {
-							process.stdout.write(' ');
-						}
-					} else {
-						if (tile.possibles.includes(possible)) {
-							process.stdout.write(possible.toString());
-						} else {
-							process.stdout.write(chalk.gray('x'));
-						}
-					}
-				});
-				process.stdout.write(color(colIndex)(' | '));
-			});
-			process.stdout.write('\n');
-		});
-		newLine(rowIndex);
-	});
-};
-
-export { solve, render };
+export { iterate };
+export default solve;
