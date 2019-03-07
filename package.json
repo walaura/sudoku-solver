@@ -1,0 +1,28 @@
+{
+  "name": "sudoku-solver",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/walaura/sudoku-solver.git"
+  },
+  "author": "lau mayhem",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/walaura/sudoku-solver/issues"
+  },
+  "homepage": "https://github.com/walaura/sudoku-solver#readme",
+  "devDependencies": {
+    "@babel/core": "^7.3.4",
+    "@babel/preset-env": "^7.3.4",
+    "@babel/register": "^7.0.0",
+    "@types/node": "^11.10.5"
+  },
+  "dependencies": {
+    "chalk": "^2.4.2"
+  }
+}
