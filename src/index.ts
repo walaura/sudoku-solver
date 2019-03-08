@@ -12,11 +12,14 @@ import {
 const isUnique = (number, tileGroup: TileGroup): boolean =>
 	tileGroup.filter(({ possibles }) => possibles.has(number)).length === 0;
 
-const suspectify = (possibles: number[]) => possibles.sort().join('');
-const unsuspectify = (suspect: string): number[] =>
-	suspect.split('').map(s => parseInt(s));
+const findNonPossibles = (tileGroup: TileGroup): number[] =>
+	tileGroup.filter(isSolved).map(getSolution);
 
 const findGridLocks = (tileGroup: TileGroup): number[][] => {
+	const suspectify = (possibles: number[]) => possibles.sort().join('');
+	const unsuspectify = (suspect: string): number[] =>
+		suspect.split('').map(s => parseInt(s));
+
 	let rt = [];
 	const suspects = tileGroup
 		.map(tile => suspectify([...tile.possibles]))
@@ -25,33 +28,6 @@ const findGridLocks = (tileGroup: TileGroup): number[][] => {
 		const len = suspects.filter(s => s === suspect).length;
 		if (len === suspect.length) {
 			rt.push(...unsuspectify(suspect));
-		}
-	}
-	return rt;
-};
-
-const findNonPossibles = (tileGroup: TileGroup): number[] =>
-	tileGroup.filter(isSolved).map(getSolution);
-
-const getIndexWithinQuad = (i: number): number => i % 3;
-
-const getQuad = (
-	sudoku: Sudoku,
-	{ rowIndex, colIndex }: { rowIndex: number; colIndex: number }
-): Quad => {
-	const getIds = quad => [3 * quad - 3, 3 * quad - 2, 3 * quad - 1];
-	const [rowQuad, colQuad] = [
-		Math.ceil((rowIndex + 1) / 3),
-		Math.ceil((colIndex + 1) / 3),
-	].map(getIds);
-
-	let rt = [[], [], []];
-	for (let rowQuadIndex of rowQuad) {
-		for (let colQuadIndex of colQuad) {
-			rt[rowQuadIndex % 3] = [
-				...rt[rowQuadIndex % 3],
-				sudoku[rowQuadIndex][colQuadIndex],
-			];
 		}
 	}
 	return rt;
@@ -95,6 +71,30 @@ const findBlockedInQuad = (
 		blockedRows: getBlockedInGroup(rows, rowIndex),
 		blockedCols: getBlockedInGroup(columns, colIndex),
 	};
+	return rt;
+};
+
+const getIndexWithinQuad = (i: number): number => i % 3;
+
+const getQuad = (
+	sudoku: Sudoku,
+	{ rowIndex, colIndex }: { rowIndex: number; colIndex: number }
+): Quad => {
+	const getIds = quad => [3 * quad - 3, 3 * quad - 2, 3 * quad - 1];
+	const [rowQuad, colQuad] = [
+		Math.ceil((rowIndex + 1) / 3),
+		Math.ceil((colIndex + 1) / 3),
+	].map(getIds);
+
+	let rt = [[], [], []];
+	for (let rowQuadIndex of rowQuad) {
+		for (let colQuadIndex of colQuad) {
+			rt[getIndexWithinQuad(rowQuadIndex)] = [
+				...rt[getIndexWithinQuad(rowQuadIndex)],
+				sudoku[rowQuadIndex][colQuadIndex],
+			];
+		}
+	}
 	return rt;
 };
 
