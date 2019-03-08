@@ -126,15 +126,16 @@ const iterate = (sudoku: Sudoku): Sudoku => {
 				return tile;
 			}
 
-			const inRow = getRow(sudoku, { rowIndex, colIndex });
-			const inCol = getColumn(sudoku, { rowIndex, colIndex });
+			/* 
+			get some stuff
+			*/
+			let blocked = [];
 			const quad = getQuad(sudoku, { rowIndex, colIndex });
 
-			const inQuad = quad
-				.reduce((a, b) => [...a, ...b], [])
-				.filter(t => t !== tile);
+			const inRow = getRow(sudoku, { rowIndex, colIndex });
+			const inCol = getColumn(sudoku, { rowIndex, colIndex });
+			const inQuad = quad.flat().filter(t => t !== tile);
 
-			const blocked = [];
 			/* 
 			Find all possible numbers & filter out which ones
 			are "placed" already (this loop is how i do sudokus irl)
@@ -143,7 +144,9 @@ const iterate = (sudoku: Sudoku): Sudoku => {
 
 			/* 
 			tiles can be 'grid locked' when within a set, there's 
-			a pair with the same possibilities
+			a pair with the same possibile #s. This means that
+			pair is the only place in the set where those numbers will 
+			appear and it's safe to block them
 			*/
 			for (const set of [inRow, inCol, inQuad]) {
 				blocked.push(...findGridLocks(set));
@@ -154,9 +157,10 @@ const iterate = (sudoku: Sudoku): Sudoku => {
 			}
 
 			/*
-			within quads a tile in a row/col can be blocked for
-			the whole board if its only possible in a row/col in that quad. 
-			We preempt this work and pick it up on the next pass
+			within quads a possible # in a row/col can be blocked for
+			the rest of the quads in the board if it can only go
+			in a row/col in that quad. 
+			We preempt this work and pick it up on the next passes.
 			*/
 			tile = { ...tile, ...findBlockedInQuad(quad, { rowIndex, colIndex }) };
 
@@ -174,8 +178,10 @@ const iterate = (sudoku: Sudoku): Sudoku => {
 			}
 
 			/*
-			in the same vein, if a tile is horizontally or vertically
-			locked we can do away with the rest of numbers and gridlock it
+			if a possible # is horizontally or vertically
+			locked with more than 1 number we can assume it has a pair.
+			we can do away with the rest of possible #s and turn them
+			into a gridlock
 			*/
 			if ([...tile.blockedRows].filter(r => tile.possibles.has(r)).length > 1) {
 				tile.possibles = new Set([...tile.blockedRows, ...tile.blockedCols]);
